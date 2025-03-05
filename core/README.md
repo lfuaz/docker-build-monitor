@@ -49,12 +49,11 @@ This API provides endpoints for monitoring and managing Docker projects, deploym
 
 ## Environment Variables
 
-- `PORT` - Server port (default: 3000)
+- `PORT` - Server port (default: 8048)
 - `DB_HOST` - MySQL host (default: mysql)
 - `DB_USER` - MySQL user (default: root)
 - `DB_PASSWORD` - MySQL password (default: password)
 - `DB_NAME` - MySQL database (default: docker_monitor)
-- `BACKEND_URL` - URL for webhook generation
 
 ## SSE Events
 

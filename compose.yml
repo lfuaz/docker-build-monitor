@@ -1,15 +1,4 @@
 services:
-  app:
-    build: 
-      context: ./core
-    container_name: sse-app-docker
-    restart: unless-stopped
-    environment:
-      MYSQL_USER: ${DB_NAME}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: Vateferfoutr3!
-
   database:
     image: mysql:8.2
     container_name: sse-database-docker
@@ -18,7 +7,47 @@ services:
       MYSQL_USER: ${DB_NAME}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: Vateferfoutr3!
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: jgezhchafb9824zgv
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # Use this locally
+    # ports:
+    #   - "3306:3306"
 
+  app:
+    build:
+      args:
+        - PORT=${PORT}
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /frontend/node_modules
+    ports:
+      - "5173:5173"
+    container_name: sse-app-docker
+    depends_on:
+      - api
+
+  api:
+    build: 
+      context: ./core
+    volumes:
+      - ./frontend/dist:/app/dist:ro
+      # - sse-manager-docker-compose:/compose:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    container_name: sse-api-docker
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      DB_HOST: database
+      DB_USER: ${DB_NAME}
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      HOST_UID: ${UID:-1000}
+      HOST_GID: ${GID:-1000}  
+      PORT: ${PORT}
+    depends_on:
+      - database
+
+# volumes:
+#   sse-manager-docker-compose:

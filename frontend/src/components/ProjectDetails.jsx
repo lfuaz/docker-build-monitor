@@ -75,7 +75,7 @@ const ProjectDetails = ({ project, onEdit, onWebhookCreated, onProjectUpdated })
       const messageLifetime = 10000; // ms - how long to remember a message
       
       // Verify server connectivity before establishing SSE connection
-      const API_BASE_URL = import.meta.env.VITE_SERVER_ENDPOINT || 'http://localhost:3000';
+      const API_BASE_URL = location.origin;
       
       // First, test basic connectivity with a simple fetch
       fetch(`${API_BASE_URL}/health`)
@@ -299,7 +299,7 @@ const ProjectDetails = ({ project, onEdit, onWebhookCreated, onProjectUpdated })
     
     try {
       // First confirm server connectivity
-      const API_BASE_URL = import.meta.env.VITE_SERVER_ENDPOINT || 'http://localhost:3000';
+      const API_BASE_URL = location.origin;
       
       try {
         // Perform a quick health check before attempting to build

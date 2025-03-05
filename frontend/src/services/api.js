@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8048';
+const API_BASE_URL = location.origin;
 
 // Simple fetch with error handling
 const fetchWithErrorHandling = async (url, options = {}) => {
