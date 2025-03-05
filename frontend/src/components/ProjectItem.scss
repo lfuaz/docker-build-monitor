@@ -1,0 +1,54 @@
+.project-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eaeaea;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  &.selected {
+    background-color: rgba(25, 118, 210, 0.1);
+    font-weight: 500;
+  }
+
+  &.detected {
+    color: #666;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-left: 3px solid #aeaeae;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.07);
+    }
+  }
+
+  .project-item-name {
+    flex-grow: 1;
+  }
+
+  .project-item-actions {
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+    }
+
+    .import-button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      
+      &:hover {
+        background-color: #45a049;
+      }
+    }
+  }
+}

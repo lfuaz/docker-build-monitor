@@ -1,0 +1,23 @@
+.project-list {
+  overflow-y: auto;
+  height: calc(100% - 60px);
+  
+  .loading, .empty-list {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+  }
+
+  .project-section {
+    margin-bottom: 15px;
+    
+    .section-title {
+      font-size: 0.85rem;
+      color: #666;
+      text-transform: uppercase;
+      margin: 0;
+      padding: 8px 15px;
+      background-color: #f5f5f5;
+    }
+  }
+}

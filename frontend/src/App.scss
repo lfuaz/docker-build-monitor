@@ -1,0 +1,1710 @@
+/* frontend/src/App.scss */
+
+// Import sass modules
+@use "sass:color";
+@use "sass:map";
+
+// Variables
+$colors: (
+  primary: #3498db,
+  primary-dark: #2980b9,
+  secondary: #2ecc71,
+  accent: #9b59b6,
+  success: #27ae60,
+  warning: #f39c12,
+  danger: #e74c3c,
+  info: #00bcd4,
+  light: #ecf0f1,
+  dark: #34495e,
+  text-primary: #2c3e50,
+  text-secondary: #7f8c8d,
+  border: #dfe6e9
+);
+
+$spacing: (
+  xs: 0.25rem,
+  sm: 0.5rem,
+  md: 1rem,
+  lg: 1.5rem,
+  xl: 2rem,
+  xxl: 3rem
+);
+
+$fonts: (
+  primary: ('Poppins', sans-serif),
+  mono: ('Roboto Mono', monospace)
+);
+
+$breakpoints: (
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px
+);
+
+$border-radius: (
+  sm: 0.25rem,
+  md: 0.5rem,
+  lg: 0.75rem,
+  xl: 1rem,
+  pill: 50rem
+);
+
+$shadows: (
+  sm: 0 1px 3px rgba(0, 0, 0, 0.12),
+  md: 0 4px 6px rgba(0, 0, 0, 0.1),
+  lg: 0 10px 15px rgba(0, 0, 0, 0.07),
+  inset: inset 0 2px 4px rgba(0, 0, 0, 0.06)
+);
+
+$transitions: (
+  fast: 0.15s ease,
+  normal: 0.25s ease,
+  slow: 0.4s ease
+);
+
+// Mixins
+@mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+}
+
+@mixin shadow($level: md) {
+  box-shadow: map.get($shadows, $level);
+}
+
+@mixin card($padding: md, $radius: md, $shadow: md) {
+  background-color: white;
+  border-radius: map.get($border-radius, $radius);
+  padding: map.get($spacing, $padding);
+  @include shadow($shadow);
+}
+
+@mixin button($type: primary, $size: md) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: map.get($colors, $type);
+  color: white;
+  border: none;
+  border-radius: map.get($border-radius, sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all map.get($transitions, fast);
+  
+  @if $size == xs {
+    padding: map.get($spacing, xs) map.get($spacing, sm);
+    font-size: 0.75rem;
+  } @else if $size == sm {
+    padding: map.get($spacing, sm) map.get($spacing, md);
+    font-size: 0.875rem;
+  } @else if $size == md {
+    padding: map.get($spacing, sm) map.get($spacing, lg);
+    font-size: 0.9375rem;
+  } @else if $size == lg {
+    padding: map.get($spacing, md) map.get($spacing, xl);
+    font-size: 1rem;
+  }
+  
+  &:hover:not(:disabled) {
+    background-color: color.adjust(map.get($colors, $type), $lightness: -10%);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@mixin scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+@mixin responsive($breakpoint) {
+  @media (min-width: map.get($breakpoints, $breakpoint)) {
+    @content;
+  }
+}
+
+// Reset & Base Styles
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  height: 100%;
+}
+
+body {
+  font-family: map.get($fonts, primary);
+  color: map.get($colors, text-primary);
+  background-color: #f8f9fa;
+  line-height: 1.5;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: map.get($colors, primary);
+  text-decoration: none;
+  transition: color map.get($transitions, fast);
+  
+  &:hover {
+    color: map.get($colors, primary-dark);
+  }
+}
+
+// Main Layout
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  @include flex(row, space-between, center);
+  background-color: map.get($colors, dark);
+  color: white;
+  padding: map.get($spacing, md) map.get($spacing, xl);
+  @include shadow(md);
+  position: relative;
+  z-index: 10;
+  
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+}
+
+.container {
+  display: flex;
+  flex: 1;
+}
+
+// Sidebar
+.sidebar {
+  width: 260px;
+  background-color: white;
+  border-right: 1px solid map.get($colors, border);
+  @include flex(column);
+  transition: width map.get($transitions, normal);
+  height: calc(100vh - 4rem); // Adjust based on header height
+  position: sticky;
+  top: 4rem; // Match header height
+}
+
+.sidebar-header {
+  @include flex(row, space-between, center);
+  padding: map.get($spacing, md);
+  border-bottom: 1px solid map.get($colors, border);
+  
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+}
+
+.add-button {
+  @include button(primary, sm);
+}
+
+.project-list {
+  margin-top: map.get($spacing, md);
+  list-style: none;
+  padding: map.get($spacing, sm);
+  
+  li {
+    padding: map.get($spacing, md);
+    margin-bottom: map.get($spacing, xs);
+    border-radius: map.get($border-radius, sm);
+    transition: all map.get($transitions, fast);
+    cursor: pointer;
+    
+    &:hover {
+      background-color: rgba(map.get($colors, primary), 0.1);
+      color: map.get($colors, primary);
+    }
+    
+    &.selected {
+      background-color: map.get($colors, primary);
+      color: white;
+    }
+  }
+}
+
+// Main Content
+.content {
+  flex: 1;
+  padding: map.get($spacing, xl);
+  overflow-y: auto;
+  background-color: #f8f9fa;
+}
+
+.no-selection {
+  @include flex(column, center, center);
+  height: 100%;
+  text-align: center;
+  
+  p {
+    color: map.get($colors, text-secondary);
+    font-size: 1.1rem;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+}
+
+// Project Details
+.project {
+  @include card(xl, md, md);
+  
+  &__header {
+    @include flex(row, space-between, center);
+    margin-bottom: map.get($spacing, xl);
+    padding-bottom: map.get($spacing, md);
+    border-bottom: 1px solid map.get($colors, border);
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    &-actions {
+      @include flex(row);
+      gap: map.get($spacing, sm);
+    }
+  }
+  
+  &__info {
+    margin-bottom: map.get($spacing, xl);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: map.get($spacing, lg);
+    
+    &-card {
+      @include card(lg, sm, sm);
+      border-left: 4px solid map.get($colors, primary);
+      
+      h4 {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: map.get($colors, text-secondary);
+        margin-bottom: map.get($spacing, xs);
+      }
+      
+      p {
+        font-size: 1.125rem;
+        font-weight: 500;
+        
+        &.repo-url {
+          font-family: map.get($fonts, mono);
+          font-size: 0.875rem;
+          background-color: rgba(map.get($colors, border), 0.5);
+          padding: map.get($spacing, xs) map.get($spacing, sm);
+          border-radius: map.get($border-radius, sm);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
+  
+  // Tabs
+  &__tabs {
+    margin-bottom: map.get($spacing, lg);
+    border-bottom: 1px solid map.get($colors, border);
+    
+    &-nav {
+      @include flex(row);
+      gap: map.get($spacing, sm);
+      
+      &-item {
+        background: none;
+        border: none;
+        padding: map.get($spacing, md) map.get($spacing, lg);
+        font-size: 1rem;
+        font-weight: 500;
+        color: map.get($colors, text-secondary);
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        transition: all map.get($transitions, fast);
+        
+        &:hover {
+          color: map.get($colors, primary);
+        }
+        
+        &.active {
+          color: map.get($colors, primary);
+          border-bottom-color: map.get($colors, primary);
+        }
+      }
+    }
+    
+    &-content {
+      min-height: 300px;
+      padding: map.get($spacing, lg) 0;
+    }
+  }
+  
+  // Build and Deploy
+  &__control {
+    @include card(lg, md, sm);
+    margin-bottom: map.get($spacing, xl);
+    
+    &-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: map.get($spacing, md);
+    }
+    
+    &-actions {
+      @include flex(row);
+      gap: map.get($spacing, md);
+      
+      .build-btn {
+        @include button(warning, md);
+      }
+      
+      .deploy-btn {
+        @include button(success, md);
+      }
+    }
+  }
+  
+  // Logs
+  &__logs {
+    &-container {
+      @include card(lg, md, sm);
+      margin-bottom: map.get($spacing, xl);
+    }
+    
+    &-header {
+      @include flex(row, space-between, center);
+      margin-bottom: map.get($spacing, md);
+      
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      
+      &-actions {
+        @include flex(row);
+        gap: map.get($spacing, sm);
+      }
+    }
+    
+    &-live {
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      font-family: map.get($fonts, mono);
+      border-radius: map.get($border-radius, sm);
+      padding: map.get($spacing, lg);
+      height: 400px;
+      overflow-y: auto;
+      @include scrollbar;
+      
+      &:empty::before {
+        content: "No logs available";
+        color: rgba(240, 240, 240, 0.5);
+        font-style: italic;
+      }
+    }
+    
+    &-table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th {
+        background-color: rgba(map.get($colors, border), 0.5);
+        text-align: left;
+        padding: map.get($spacing, md);
+        font-weight: 500;
+        color: map.get($colors, text-secondary);
+      }
+      
+      td {
+        padding: map.get($spacing, md);
+        border-bottom: 1px solid map.get($colors, border);
+      }
+      
+      tr {
+        &:hover {
+          background-color: rgba(map.get($colors, border), 0.2);
+        }
+        
+        &.success {
+          background-color: rgba(map.get($colors, success), 0.05);
+        }
+        
+        &.error {
+          background-color: rgba(map.get($colors, danger), 0.05);
+        }
+        
+        &.expanded {
+          background-color: rgba(map.get($colors, border), 0.2);
+        }
+      }
+    }
+    
+    &-status {
+      display: inline-flex;
+      align-items: center;
+      padding: map.get($spacing, xs) map.get($spacing, sm);
+      border-radius: map.get($border-radius, pill);
+      font-size: 0.75rem;
+      font-weight: 600;
+      
+      &--started {
+        background-color: rgba(map.get($colors, warning), 0.2);
+        color: color.adjust(map.get($colors, warning), $lightness: -20%);
+      }
+      
+      &--success {
+        background-color: rgba(map.get($colors, success), 0.2);
+        color: color.adjust(map.get($colors, success), $lightness: -20%);
+      }
+      
+      &--error {
+        background-color: rgba(map.get($colors, danger), 0.2);
+        color: color.adjust(map.get($colors, danger), $lightness: -20%);
+      }
+    }
+    
+    &-content {
+      padding: map.get($spacing, lg);
+      background-color: #f8f9fa;
+      
+      pre {
+        margin: 0;
+        padding: map.get($spacing, lg);
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+        border-radius: map.get($border-radius, sm);
+        font-family: map.get($fonts, mono);
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        @include scrollbar;
+      }
+    }
+  }
+  
+  // Webhooks
+  &__webhooks {
+    &-container {
+      @include card(lg, md, sm);
+    }
+    
+    &-header {
+      @include flex(row, space-between, center);
+      margin-bottom: map.get($spacing, lg);
+      
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      
+      &-btn {
+        @include button(primary, sm);
+      }
+    }
+    
+    &-table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th {
+        background-color: rgba(map.get($colors, border), 0.5);
+        text-align: left;
+        padding: map.get($spacing, md);
+        font-weight: 500;
+        color: map.get($colors, text-secondary);
+      }
+      
+      td {
+        padding: map.get($spacing, md);
+        border-bottom: 1px solid map.get($colors, border);
+      }
+      
+      tr:hover {
+        background-color: rgba(map.get($colors, border), 0.2);
+      }
+    }
+    
+    &-url {
+      font-family: map.get($fonts, mono);
+      background-color: rgba(map.get($colors, border), 0.5);
+      padding: map.get($spacing, xs) map.get($spacing, sm);
+      border-radius: map.get($border-radius, sm);
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    &-actions {
+      @include flex(row);
+      gap: map.get($spacing, xs);
+      
+      .view-btn {
+        @include button(dark, xs);
+      }
+      
+      .delete-btn {
+        @include button(danger, xs);
+      }
+    }
+  }
+}
+
+.project-details {
+  @include card(xl, md, md);
+  width: 100%;
+  margin-bottom: map.get($spacing, xl);
+}
+
+.project-header {
+  @include flex(row, space-between, center);
+  margin-bottom: map.get($spacing, xl);
+  padding-bottom: map.get($spacing, md);
+  border-bottom: 1px solid map.get($colors, border);
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .project-actions {
+    @include flex(row);
+    gap: map.get($spacing, sm);
+    
+    .edit-button {
+      @include button(primary, sm);
+    }
+    
+    .delete-button {
+      @include button(danger, sm);
+    }
+  }
+}
+
+.project-info {
+  margin-bottom: map.get($spacing, xl);
+  
+  .info-row {
+    @include flex(row, flex-start, center);
+    margin-bottom: map.get($spacing, sm);
+    
+    .label {
+      font-weight: 500;
+      color: map.get($colors, text-secondary);
+      width: 120px;
+      flex-shrink: 0;
+    }
+    
+    .value {
+      font-family: map.get($fonts, mono);
+      font-size: 0.875rem;
+      background-color: rgba(map.get($colors, border), 0.5);
+      padding: map.get($spacing, xs) map.get($spacing, sm);
+      border-radius: map.get($border-radius, sm);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-grow: 1;
+    }
+  }
+}
+
+.tabs {
+  @include flex(row);
+  margin-bottom: map.get($spacing, lg);
+  border-bottom: 1px solid map.get($colors, border);
+  
+  .tab-button {
+    background: none;
+    border: none;
+    padding: map.get($spacing, md) map.get($spacing, lg);
+    font-size: 1rem;
+    font-weight: 500;
+    color: map.get($colors, text-secondary);
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all map.get($transitions, fast);
+    
+    &:hover {
+      color: map.get($colors, primary);
+    }
+    
+    &.active {
+      color: map.get($colors, primary);
+      border-bottom-color: map.get($colors, primary);
+    }
+  }
+}
+
+.tab-content {
+  padding: map.get($spacing, md) 0;
+  min-height: 300px;
+
+
+  .control-panel{
+    h3{
+
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    }
+    .button-row{
+      @include flex(row, flex-start, center);
+      gap: map.get($spacing, md);
+      .action-button{
+        @include button(warning, md);
+          &.build{
+            @include button(warning, md);
+          }
+          &.deploy{
+            @include button(success, md);
+          }
+      }
+    }
+  }
+
+  
+  .logs-container {
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: map.get($spacing, md);
+    }
+    
+    .live-logs {
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      border-radius: map.get($border-radius, sm);
+      padding: map.get($spacing, lg);
+      height: 400px;
+      overflow-y: auto;
+      @include scrollbar;
+      
+      .logs-output {
+        font-family: map.get($fonts, mono);
+        white-space: pre-wrap;
+        margin: 0;
+        padding: 0;
+        
+        .log-line {
+          margin-bottom: map.get($spacing, xs);
+          font-size: 0.9rem;
+          line-height: 1.5;
+          
+          &.status-message {
+            color: #a8e6cf;
+            font-weight: 500;
+          }
+        }
+      }
+      
+      &:empty::before {
+        content: "Aucun log disponible";
+        color: rgba(240, 240, 240, 0.5);
+        font-style: italic;
+      }
+    }
+  }
+  
+  .history-container {
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: map.get($spacing, lg);
+    }
+    
+    .logs-list {
+      border-radius: map.get($border-radius, md);
+      background-color: white;
+      @include shadow(sm);
+      overflow: hidden;
+      max-height: 600px;
+      overflow-y: auto;
+      @include scrollbar;
+    }
+    
+    .logs-table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        
+        tr {
+          background-color: #f8f9fa;
+        }
+        
+        th {
+          padding: map.get($spacing, md);
+          text-align: left;
+          font-weight: 600;
+          color: map.get($colors, text-secondary);
+          border-bottom: 2px solid map.get($colors, border);
+          white-space: nowrap;
+          
+          &:first-child {
+            padding-left: map.get($spacing, lg);
+          }
+          
+          &:last-child {
+            padding-right: map.get($spacing, lg);
+          }
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: background-color map.get($transitions, fast);
+          
+          &:hover {
+            background-color: rgba(map.get($colors, border), 0.3);
+          }
+          
+          &.success {
+            &:hover {
+              background-color: rgba(map.get($colors, success), 0.1);
+            }
+          }
+          
+          &.started {
+            &:hover {
+              background-color: rgba(map.get($colors, warning), 0.1);
+            }
+          }
+          
+          &.error {
+            &:hover {
+              background-color: rgba(map.get($colors, danger), 0.1);
+            }
+          }
+        }
+        
+        td {
+          padding: map.get($spacing, md);
+          border-bottom: 1px solid map.get($colors, border);
+          font-size: 0.9rem;
+          
+          &:first-child {
+            padding-left: map.get($spacing, lg);
+            white-space: nowrap;
+          }
+          
+          &:last-child {
+            padding-right: map.get($spacing, lg);
+          }
+        }
+      }
+      
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: map.get($spacing, xs) map.get($spacing, sm);
+        border-radius: map.get($border-radius, pill);
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+        
+        &.success {
+          background-color: rgba(map.get($colors, success), 0.2);
+          color: color.adjust(map.get($colors, success), $lightness: -20%);
+        }
+        
+        &.started {
+          background-color: rgba(map.get($colors, warning), 0.2);
+          color: color.adjust(map.get($colors, warning), $lightness: -20%);
+        }
+        
+        &.error {
+          background-color: rgba(map.get($colors, danger), 0.2);
+          color: color.adjust(map.get($colors, danger), $lightness: -20%);
+        }
+      }
+      
+      .small-button {
+        padding: map.get($spacing, xs) map.get($spacing, sm);
+        font-size: 0.8rem;
+        border-radius: map.get($border-radius, sm);
+        cursor: pointer;
+        transition: all map.get($transitions, fast);
+        white-space: nowrap;
+        
+        &.view {
+          background-color: map.get($colors, dark);
+          color: white;
+          border: none;
+          
+          &:hover {
+            background-color: color.adjust(map.get($colors, dark), $lightness: -10%);
+          }
+        }
+      }
+    }
+  }
+  
+  .webhooks-container {
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+    
+    .webhooks-header {
+      @include flex(row, space-between, center);
+      margin-bottom: map.get($spacing, lg);
+      
+      .create-webhook-button {
+        @include button(primary, sm);
+      }
+    }
+    
+    .webhooks-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: map.get($border-radius, md);
+      overflow: hidden;
+      background-color: white;
+      @include shadow(sm);
+      
+      thead {
+        background-color: #f8f9fa;
+        
+        th {
+          padding: map.get($spacing, md);
+          text-align: left;
+          font-weight: 600;
+          color: map.get($colors, text-secondary);
+          border-bottom: 2px solid map.get($colors, border);
+          
+          &:first-child {
+            padding-left: map.get($spacing, lg);
+            width: 60px;
+          }
+          
+          &:last-child {
+            padding-right: map.get($spacing, lg);
+            width: 150px;
+          }
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: background-color map.get($transitions, fast);
+          
+          &:hover {
+            background-color: rgba(map.get($colors, border), 0.3);
+          }
+          
+          td {
+            padding: map.get($spacing, md);
+            border-bottom: 1px solid map.get($colors, border);
+            font-size: 0.9rem;
+            
+            &:first-child {
+              padding-left: map.get($spacing, lg);
+              font-weight: 500;
+            }
+            
+            &:last-child {
+              padding-right: map.get($spacing, lg);
+            }
+            
+            .webhook-url {
+              font-family: map.get($fonts, mono);
+              font-size: 0.8rem;
+              background-color: rgba(map.get($colors, border), 0.5);
+              padding: map.get($spacing, xs) map.get($spacing, sm);
+              border-radius: map.get($border-radius, sm);
+              display: inline-block;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+        }
+      }
+      
+      .webhook-actions {
+        @include flex(row, flex-start, center);
+        gap: map.get($spacing, sm);
+        
+        .small-button {
+          padding: map.get($spacing, xs) map.get($spacing, sm);
+          font-size: 0.8rem;
+          border-radius: map.get($border-radius, sm);
+          cursor: pointer;
+          transition: all map.get($transitions, fast);
+          background-color: #f0f0f0;
+          border: none;
+          color: map.get($colors, text-primary);
+          
+          &:hover {
+            background-color: #e0e0e0;
+          }
+          
+          &.delete {
+            background-color: rgba(map.get($colors, danger), 0.1);
+            color: map.get($colors, danger);
+            
+            &:hover {
+              background-color: map.get($colors, danger);
+              color: white;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Forms
+.project-form {
+  max-width: 700px;
+  @include card(xl, md, md);
+  margin: 0 auto;
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: map.get($spacing, xl);
+    padding-bottom: map.get($spacing, md);
+    border-bottom: 1px solid map.get($colors, border);
+    color: map.get($colors, text-primary);
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: map.get($spacing, lg);
+  }
+}
+
+.form-group {
+  margin-bottom: map.get($spacing, lg);
+  
+  label {
+    display: block;
+    margin-bottom: map.get($spacing, xs);
+    font-weight: 500;
+    color: map.get($colors, text-primary);
+  }
+  
+  input, textarea, select {
+    width: 100%;
+    padding: map.get($spacing, md);
+    font-family: inherit;
+    font-size: 1rem;
+    border: 1px solid map.get($colors, border);
+    border-radius: map.get($border-radius, sm);
+    background-color: white;
+    transition: all map.get($transitions, fast);
+    
+    &:focus {
+      outline: none;
+      border-color: map.get($colors, primary);
+      box-shadow: 0 0 0 3px rgba(map.get($colors, primary), 0.1);
+    }
+    
+    &.error {
+      border-color: map.get($colors, danger);
+      
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(map.get($colors, danger), 0.1);
+      }
+    }
+  }
+  
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+}
+
+.form-actions {
+  @include flex(row, flex-end);
+  gap: map.get($spacing, md);
+  margin-top: map.get($spacing, xl);
+}
+
+.cancel-button {
+  padding: map.get($spacing, md) map.get($spacing, lg);
+  background-color: transparent;
+  color: map.get($colors, text-primary);
+  border: 1px solid map.get($colors, border);
+  border-radius: map.get($border-radius, sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all map.get($transitions, fast);
+  
+  &:hover {
+    background-color: rgba(map.get($colors, border), 0.5);
+  }
+}
+
+.submit-button {
+  padding: map.get($spacing, md) map.get($spacing, lg);
+  background-color: map.get($colors, primary);
+  color: white;
+  border: none;
+  border-radius: map.get($border-radius, sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all map.get($transitions, fast);
+  
+  &:hover:not(:disabled) {
+    background-color: color.adjust(map.get($colors, primary), $lightness: -10%);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Modals
+.modal {
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    @include flex(row, center, center);
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  &__container {
+    background-color: white;
+    border-radius: map.get($border-radius, md);
+    padding: map.get($spacing, xl);
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    @include scrollbar;
+    @include shadow(lg);
+    animation: slideIn 0.2s ease;
+    position: relative;
+  }
+  
+  &__header {
+    margin-bottom: map.get($spacing, lg);
+    padding-bottom: map.get($spacing, md);
+    border-bottom: 1px solid map.get($colors, border);
+    
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+  
+  &__content {
+    margin-bottom: map.get($spacing, lg);
+  }
+  
+  &__actions {
+    @include flex(row, flex-end);
+    gap: map.get($spacing, md);
+    margin-top: map.get($spacing, xl);
+    padding-top: map.get($spacing, md);
+    border-top: 1px solid map.get($colors, border);
+  }
+  
+  &__close {
+    @include button(light, sm);
+    position: absolute;
+    top: map.get($spacing, md);
+    right: map.get($spacing, md);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      background-color: rgba(map.get($colors, border), 0.5);
+    }
+  }
+}
+
+// Utility components
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: map.get($spacing, xs) map.get($spacing, sm);
+  border-radius: map.get($border-radius, pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  
+  &--primary {
+    background-color: rgba(map.get($colors, primary), 0.2);
+    color: color.adjust(map.get($colors, primary), $lightness: -20%);
+  }
+  
+  &--success {
+    background-color: rgba(map.get($colors, success), 0.2);
+    color: color.adjust(map.get($colors, success), $lightness: -20%);
+  }
+  
+  &--warning {
+    background-color: rgba(map.get($colors, warning), 0.2);
+    color: color.adjust(map.get($colors, warning), $lightness: -20%);
+  }
+  
+  &--danger {
+    background-color: rgba(map.get($colors, danger), 0.2);
+    color: color.adjust(map.get($colors, danger), $lightness: -20%);
+  }
+  
+  &--info {
+    background-color: rgba(map.get($colors, info), 0.2);
+    color: color.adjust(map.get($colors, info), $lightness: -20%);
+  }
+}
+
+.code-block {
+  font-family: map.get($fonts, mono);
+  background-color: rgba(map.get($colors, border), 0.5);
+  padding: map.get($spacing, xs) map.get($spacing, sm);
+  border-radius: map.get($border-radius, sm);
+  font-size: 0.875rem;
+  
+  &--inline {
+    display: inline;
+  }
+  
+  &--block {
+    display: block;
+    padding: map.get($spacing, md);
+    margin: map.get($spacing, md) 0;
+    white-space: pre-wrap;
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+  }
+}
+
+.copy-wrapper {
+  position: relative;
+  
+  .copy-btn {
+    position: absolute;
+    top: map.get($spacing, sm);
+    right: map.get($spacing, sm);
+    @include button(light, xs);
+    padding: map.get($spacing, xs) map.get($spacing, sm);
+    color: map.get($colors, text-primary);
+    background-color: rgba(255, 255, 255, 0.9);
+    
+    &:hover {
+      background-color: white;
+    }
+    
+    &.copied {
+      background-color: map.get($colors, success);
+      color: white;
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments
+@include responsive(md) {
+  .project__info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@include responsive(lg) {
+  .project__info {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// French language text styles
+h1, h2, button, p, li {
+  font-family: map.get($fonts, primary);
+}
+
+// Responsive adjustments
+@media (max-width: map.get($breakpoints, md - 1px)) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 4rem;
+    height: calc(100% - 4rem);
+    z-index: 90;
+    transform: translateX(-100%);
+    transition: transform map.get($transitions, normal);
+    
+    &.open {
+      transform: translateX(0);
+    }
+  }
+  
+  .content {
+    padding: map.get($spacing, md);
+  }
+  
+  .sidebar-header {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    .add-button {
+      margin-top: map.get($spacing, sm);
+    }
+  }
+}
+
+@include responsive(md) {
+  .project-info {
+    .info-row {
+      margin-bottom: map.get($spacing, sm);
+      
+      .label {
+        width: 150px;
+      }
+    }
+  }
+}
+
+@include responsive(lg) {
+  .tabs {
+    .tab-button {
+      padding: map.get($spacing, md) map.get($spacing, xl);
+    }
+  }
+}
+
+// Responsive adjustments for mobile
+@media (max-width: map.get($breakpoints, md - 1px)) {
+  .project-header {
+    flex-direction: column;
+    align-items: flex-start;
+    
+    .project-actions {
+      margin-top: map.get($spacing, md);
+    }
+  }
+  
+  .project-info {
+    .info-row {
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: map.get($spacing, md);
+      
+      .label {
+        margin-bottom: map.get($spacing, xs);
+        width: 100%;
+      }
+      
+      .value {
+        width: 100%;
+      }
+    }
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+    gap: map.get($spacing, xs);
+    
+    .tab-button {
+      padding: map.get($spacing, sm) map.get($spacing, md);
+      font-size: 0.9rem;
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, lg)) {
+  .tab-content {
+    .history-container {
+      .logs-table {
+        thead th:nth-child(4),
+        tbody td:nth-child(4) {
+          display: none;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, md)) {
+  .tab-content {
+    .history-container {
+      .logs-list {
+        max-height: 500px;
+      }
+      
+      .logs-table {
+        thead th,
+        tbody td {
+          padding: map.get($spacing, sm);
+          font-size: 0.85rem;
+          
+          &:first-child {
+            padding-left: map.get($spacing, md);
+          }
+          
+          &:last-child {
+            padding-right: map.get($spacing, md);
+          }
+        }
+        
+        thead th:nth-child(4),
+        tbody td:nth-child(4) {
+          display: none;
+        }
+      }
+    }
+    
+    .webhooks-container {
+      .webhooks-table {
+        thead th,
+        tbody td {
+          padding: map.get($spacing, sm);
+          font-size: 0.85rem;
+          
+          &:first-child {
+            padding-left: map.get($spacing, md);
+          }
+          
+          &:last-child {
+            padding-right: map.get($spacing, md);
+          }
+        }
+        
+        thead th:nth-child(3),
+        tbody td:nth-child(3) {
+          display: none;
+        }
+        
+        td .webhook-url {
+          max-width: 120px;
+          font-size: 0.75rem;
+          padding: map.get($spacing, xs);
+        }
+        
+        .webhook-actions {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: map.get($spacing, xs);
+          
+          .small-button {
+            width: 100%;
+            text-align: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, sm)) {
+  .tab-content {
+    .history-container {
+      .logs-table {
+        thead th:nth-child(2),
+        tbody td:nth-child(2) {
+          display: none;
+        }
+      }
+    }
+    
+    .webhooks-container {
+      .webhooks-header {
+        flex-direction: column;
+        align-items: flex-start;
+        
+        h3 {
+          margin-bottom: map.get($spacing, md);
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, xl)) {
+  .tab-content {
+    .webhooks-container {
+      .webhooks-table {
+        td .webhook-url {
+          max-width: 180px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, lg)) {
+  .tab-content {
+    .webhooks-container {
+      .webhooks-table {
+        thead th:nth-child(4),
+        tbody td:nth-child(4) {
+          display: none;
+        }
+        
+        td .webhook-url {
+          max-width: 160px;
+        }
+      }
+    }
+  }
+}
+
+// Modal styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  @include flex(row, center, center);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background-color: white;
+  border-radius: map.get($border-radius, md);
+  padding: map.get($spacing, xl);
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  @include scrollbar;
+  @include shadow(lg);
+  animation: slideIn 0.2s ease;
+  position: relative;
+  
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: map.get($spacing, lg);
+    padding-bottom: map.get($spacing, md);
+    border-bottom: 1px solid map.get($colors, border);
+    color: map.get($colors, text-primary);
+  }
+  
+  p {
+    margin-bottom: map.get($spacing, md);
+    line-height: 1.5;
+    
+    strong {
+      font-weight: 600;
+    }
+  }
+  
+  .webhook-display {
+    @include flex(row, space-between, center);
+    background-color: rgba(map.get($colors, border), 0.3);
+    padding: map.get($spacing, md);
+    border-radius: map.get($border-radius, md);
+    margin-bottom: map.get($spacing, lg);
+    position: relative;
+    
+    code {
+      font-family: map.get($fonts, mono);
+      font-size: 0.9rem;
+      color: map.get($colors, text-primary);
+      overflow-x: auto;
+      max-width: calc(100% - 100px);
+      white-space: nowrap;
+    }
+    
+    .copy-button {
+      @include button(primary, sm);
+      flex-shrink: 0;
+      
+      &:hover {
+        background-color: color.adjust(map.get($colors, primary), $lightness: -10%);
+      }
+      
+      &.copied {
+        background-color: map.get($colors, success);
+      }
+    }
+  }
+  
+  .webhook-info {
+    color: map.get($colors, text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: map.get($spacing, lg);
+    
+    code {
+      font-family: map.get($fonts, mono);
+      background-color: rgba(map.get($colors, border), 0.5);
+      padding: map.get($spacing, xs) map.get($spacing, sm);
+      border-radius: map.get($border-radius, sm);
+      font-size: 0.85rem;
+      display: inline-block;
+      margin-top: map.get($spacing, xs);
+    }
+  }
+  
+  .webhook-instructions {
+    margin-top: map.get($spacing, lg);
+    margin-bottom: map.get($spacing, sm);
+    
+    strong {
+      font-size: 1.1rem;
+      color: map.get($colors, text-primary);
+    }
+  }
+  
+  .webhook-examples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: map.get($spacing, lg);
+    margin-bottom: map.get($spacing, lg);
+    
+    .example {
+      @include card(md, sm, sm);
+      background-color: #f8f9fa;
+      
+      h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: map.get($spacing, md);
+        color: map.get($colors, text-primary);
+      }
+      
+      pre {
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+        font-family: map.get($fonts, mono);
+        font-size: 0.85rem;
+        padding: map.get($spacing, md);
+        border-radius: map.get($border-radius, sm);
+        overflow-x: auto;
+        white-space: pre-wrap;
+        @include scrollbar;
+        line-height: 1.6;
+      }
+    }
+  }
+  
+  .modal-actions {
+    @include flex(row, flex-end);
+    gap: map.get($spacing, md);
+    margin-top: map.get($spacing, xl);
+    padding-top: map.get($spacing, md);
+    border-top: 1px solid map.get($colors, border);
+    
+    button {
+      @include button(primary, md);
+      min-width: 100px;
+    }
+  }
+}
+
+// Add responsive adjustments for the modal
+@media (max-width: map.get($breakpoints, md)) {
+  .modal {
+    padding: map.get($spacing, lg);
+    
+    .webhook-display {
+      flex-direction: column;
+      align-items: stretch;
+      
+      code {
+        max-width: 100%;
+        margin-bottom: map.get($spacing, sm);
+        overflow-x: auto;
+      }
+    }
+    
+    .webhook-examples {
+      grid-template-columns: 1fr;
+      
+      .example {
+        pre {
+          font-size: 0.8rem;
+        }
+      }
+    }
+    
+    .modal-actions {
+      justify-content: center;
+      
+      button {
+        min-width: 120px;
+      }
+    }
+  }
+}
+
+@media (max-width: map.get($breakpoints, sm)) {
+  .modal {
+    padding: map.get($spacing, md);
+    width: 95%;
+    
+    h3 {
+      font-size: 1.3rem;
+    }
+  }
+}

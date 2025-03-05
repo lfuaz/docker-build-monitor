@@ -1,0 +1,24 @@
+services:
+  app:
+    build: 
+      context: ./core
+    container_name: sse-app-docker
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: ${DB_NAME}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: Vateferfoutr3!
+
+  database:
+    image: mysql:8.2
+    container_name: sse-database-docker
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: ${DB_NAME}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: Vateferfoutr3!
+    ports:
+      - "3306:3306"
+
