@@ -1,6 +1,6 @@
 services:
   database:
-    image: mysql:8.2
+    image: mysql:8.0
     container_name: sse-database-docker
     restart: unless-stopped
     environment:
@@ -19,9 +19,7 @@ services:
       args:
         - PORT=${PORT}
       context: ./frontend
-    volumes:
-      - ./frontend:/app
-      - /frontend/node_modules
+    image: sse-frontend
     ports:
       - "5173:5173"
     container_name: sse-app-docker
@@ -31,9 +29,10 @@ services:
   api:
     build: 
       context: ./core
+    image: sse-api
     volumes:
       - ./frontend/dist:/app/dist:ro
-      # - sse-manager-docker-compose:/compose:ro
+      - sse-manager-docker-compose:/compose
       - /var/run/docker.sock:/var/run/docker.sock
     container_name: sse-api-docker
     ports:
@@ -49,5 +48,5 @@ services:
     depends_on:
       - database
 
-# volumes:
-#   sse-manager-docker-compose:
+volumes:
+  sse-manager-docker-compose:

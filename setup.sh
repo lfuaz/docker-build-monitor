@@ -24,7 +24,7 @@ CLI_SET_PORT=false
 
 # Print colorful status messages
 function echo_status() {
-  echo -e "\033[1;34m[BUILD]\033[0m $1"
+  echo -e "\033[1;34m[SETUP]\033[0m $1"
 }
 
 # Display help message
@@ -141,12 +141,21 @@ USER=$(whoami)
 # Use the current directory as the project root
 PROJECT_ROOT=$(pwd)
 
+# clear node_modules and dist directories
+echo_status "Clearing node_modules and dist directories to prevent conflicts"
+rm -rf $PROJECT_ROOT/core/node_modules
+rm -rf $PROJECT_ROOT/core/dist
+rm -rf $PROJECT_ROOT/frontend/node_modules
+rm -rf $PROJECT_ROOT/frontend/dist
+rm -rf $PROJECT_ROOT/database
+
 
 #create init.sql file to add permission connect from '%' to the database using the user and password
 echo_status "Creating init.sql file to add permission connect from '%' to the database using the user and password"
 # Make sure the database directory exists
 mkdir -p "$INITIAL_DIR/database"
 cat > "$INITIAL_DIR/database/init.sql" << SQL
+SET GLOBAL host_cache_size=0;
 CREATE USER '$DB_NAME'@'%' IDENTIFIED BY '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_NAME'@'%';
 FLUSH PRIVILEGES;
@@ -192,7 +201,7 @@ if [ "$DEPLOYMENT_MODE" = "docker" ]; then
     echo_status "Installing dependencies..."
     pnpm install || { echo_status "Frontend dependency installation failed!"; exit 1; }
     echo_status "changing ownership of frontend directory"
-    chown -R $USER:$USER dist || { echo_status "Failed to change ownership of frontend directory"; exit 1; }
+    sudo chown -R $USER:$USER dist || { echo_status "Failed to change ownership of frontend directory"; exit 1; }
     echo_status "Building frontend..."
     pnpm run build || { echo_status "Frontend build failed!"; exit 1; }
     echo_status "Frontend build completed successfully."
@@ -202,7 +211,7 @@ if [ "$DEPLOYMENT_MODE" = "docker" ]; then
     exit 1
   fi
   
-  chown -R $USER:$USER ./frontend/dist
+  sudo chown -R $USER:$USER ./frontend/dist
   echo_status "Application is running in Docker containers."
   echo_status "Access the application at http://localhost:$PORT"
 else
@@ -267,4 +276,4 @@ fi
 # Return to the initial directory
 cd "$INITIAL_DIR"
 
-echo_status "Build process completed!"
+echo_status "Setup process completed!"

@@ -2,10 +2,6 @@
 const Docker = require('dockerode');
 const Compose = require('dockerode-compose');
 const { exec } = require('child_process');
-const path = require('path');
-const yaml = require('js-yaml');
-const fs = require('fs');
-const { buildServiceFromCompose } = require('../utils/dockerBuildHelper');
 const { sendEventToAll } = require('./sseService');
 
 // Connect to Docker API
@@ -18,21 +14,24 @@ async function getProjectContainers() {
   try {
     // Get all containers
     const containers = await docker.listContainers({ all: true });
-    
+
     // Extract project information from containers
     const projectsMap = {};
     
     for (const container of containers) {
       const labels = container.Labels || {};
+      
       const projectPath = labels['com.docker.compose.project.working_dir'];
+      const configfiles = labels['com.docker.compose.project.config_files'];
       const projectName = labels['com.docker.compose.project'];
       
+
       // If container has the necessary labels
-      if (projectPath && projectName) {
+      if (configfiles) {
         if (!projectsMap[projectName]) {
           projectsMap[projectName] = {
             name: projectName,
-            path: projectPath,
+            path: configfiles,
             containers: []
           };
         }
@@ -44,6 +43,7 @@ async function getProjectContainers() {
           image: container.Image,
           state: container.State,
           status: container.Status
+          
         });
       }
     }
@@ -72,7 +72,7 @@ async function buildProject(project, logId) {
     
     // First: pull images
     const pullProcess = exec(
-      `docker compose -f ${project.path}/compose.yml pull`,
+      `docker compose -f ${project.path} pull`,
       { maxBuffer: 10 * 1024 * 1024 } // 10MB buffer
     );
     
@@ -99,7 +99,7 @@ async function buildProject(project, logId) {
       handleLog(`🏗️ Building services from Dockerfile...\n`);
       
       const buildProcess = exec(
-        `docker compose -f ${project.path}/compose.yml build --no-cache --pull`,
+        `docker compose -f ${project.path} build --no-cache --pull`,
         { maxBuffer: 10 * 1024 * 1024 } // 10MB buffer
       );
       
@@ -127,7 +127,7 @@ async function buildProject(project, logId) {
         handleLog(`📦 Creating containers...\n`);
         
         const createProcess = exec(
-          `docker compose -f ${project.path}/compose.yml create --force-recreate`,
+          `docker compose -f ${project.path} create --force-recreate`,
           { maxBuffer: 5 * 1024 * 1024 }
         );
         
@@ -219,7 +219,7 @@ function deployProject(project, logId, triggerSource = 'user') {
     
     // Execute deployment command
     const deployProcess = exec(
-      `docker compose -f ${project.path}/compose.yml up -d --build`, 
+      `docker compose -f ${project.path} up -d --build`, 
       { maxBuffer: 5 * 1024 * 1024 } // Increase buffer size to 5MB
     );
     

@@ -64,7 +64,7 @@ function sendEventToAll(eventType, data) {
     }
   });
   
-  console.log(`Event ${eventType} sent to ${sentCount}/${clients.size} clients for project ${projectName || 'unknown'}`);
+  // console.log(`Event ${eventType} sent to ${sentCount}/${clients.size} clients for project ${projectName || 'unknown'}`);
 }
 
 module.exports = {
