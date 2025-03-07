@@ -1,13 +1,15 @@
 // routes/projectRoutes.js - Project-related routes
 const express = require('express');
-const pool = require('../config/database');
+const { dbAll , dbRun }  = require('../config/database');
 const { getProjectContainers } = require('../services/dockerService');
 const router = express.Router();
+
+
 
 // List all projects
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM projects ORDER BY name');
+    const rows = await dbAll('SELECT * FROM projects ORDER BY name');
     res.json(rows);
   } catch (error) {
     console.error('Error retrieving projects:', error);
@@ -22,7 +24,7 @@ router.get('/detect', async (req, res) => {
     const detectedProjects = await getProjectContainers();
     
     // Check which projects already exist in database
-    const [existingProjects] = await pool.query('SELECT name, path FROM projects');
+    const existingProjects = await dbAll('SELECT name, path FROM projects');
     const existingProjectsMap = {};
     
     for (const project of existingProjects) {
@@ -72,7 +74,7 @@ router.post('/import', async (req, res) => {
         const project = projectsMap[name];
         
         // Check if project already exists
-        const [existingCheck] = await pool.query(
+        const existingCheck = await dbAll(
           'SELECT id FROM projects WHERE name = ? OR path = ?',
           [project.name, project.path]
         );
@@ -83,13 +85,13 @@ router.post('/import', async (req, res) => {
         }
         
         // Insert new project
-        const [result] = await pool.query(
+        const result = await dbRun(
           'INSERT INTO projects (name, path, description) VALUES (?, ?, ?)',
           [project.name, project.path, `Project automatically imported from Docker`]
         );
         
         importResults.push({
-          id: result.insertId,
+          id: result.lastID,
           name: project.name,
           path: project.path,
           imported: true
@@ -111,7 +113,7 @@ router.post('/import', async (req, res) => {
 // Get a specific project
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
+    const rows = await dbAll('SELECT * FROM projects WHERE id = ?', [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
@@ -131,13 +133,13 @@ router.post('/', async (req, res) => {
   }
   
   try {
-    const [result] = await pool.query(
+    const result = await dbRun(
       'INSERT INTO projects (name, path, description, repository_url) VALUES (?, ?, ?, ?)',
       [name, path, description, repository_url]
     );
     
     res.status(201).json({
-      id: result.insertId,
+      id: result.lastID,
       name,
       path,
       description,
@@ -146,7 +148,7 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error creating project:', error);
     
-    if (error.code === 'ER_DUP_ENTRY') {
+    if (error.message.includes('UNIQUE constraint failed')) {
       return res.status(409).json({ error: 'A project with this name already exists' });
     }
     
@@ -164,12 +166,12 @@ router.put('/:id', async (req, res) => {
   }
   
   try {
-    const [result] = await pool.query(
+    const result = await dbRun(
       'UPDATE projects SET name = ?, path = ?, description = ?, repository_url = ? WHERE id = ?',
       [name, path, description, repository_url, id]
     );
     
-    if (result.affectedRows === 0) {
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
     
@@ -183,7 +185,7 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating project:', error);
     
-    if (error.code === 'ER_DUP_ENTRY') {
+    if (error.message.includes('UNIQUE constraint failed')) {
       return res.status(409).json({ error: 'A project with this name already exists' });
     }
     
@@ -194,9 +196,9 @@ router.put('/:id', async (req, res) => {
 // Delete a project
 router.delete('/:id', async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM projects WHERE id = ?', [req.params.id]);
+    const result = await dbRun('DELETE FROM projects WHERE id = ?', [req.params.id]);
     
-    if (result.affectedRows === 0) {
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
     
@@ -210,7 +212,7 @@ router.delete('/:id', async (req, res) => {
 // Get project logs
 router.get('/:id/logs', async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const rows = await dbAll(
       'SELECT * FROM deployment_logs WHERE project_id = ? ORDER BY created_at DESC LIMIT 50',
       [req.params.id]
     );
@@ -225,7 +227,7 @@ router.get('/:id/logs', async (req, res) => {
 // Get project webhooks
 router.get('/:id/webhooks', async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const rows = await dbAll(
       'SELECT * FROM webhooks WHERE project_id = ? ORDER BY created_at DESC',
       [req.params.id]
     );

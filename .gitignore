@@ -3,3 +3,6 @@
 /database
 /core/dist
 .env
+/core/.pnpm-store
+*.db
+*lock*

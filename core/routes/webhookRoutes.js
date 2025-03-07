@@ -1,9 +1,10 @@
 // routes/webhookRoutes.js - Webhook-related routes
 const express = require('express');
-const pool = require('../config/database');
+const { dbAll , dbRun } = require('../config/database');
 const { deployProject } = require('../services/dockerService');
 const { sendEventToAll } = require('../services/sseService');
 const router = express.Router();
+
 
 // Generate a unique token for webhooks
 const generateToken = () => {
@@ -15,7 +16,7 @@ router.post('/create/:id', async (req, res) => {
   const { description } = req.body;
   
   try {
-    const [rows] = await pool.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
+    const rows = await dbAll('SELECT * FROM projects WHERE id = ?', [req.params.id]);
     
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
@@ -24,7 +25,7 @@ router.post('/create/:id', async (req, res) => {
     const project = rows[0];
     const token = generateToken();
     
-    const [result] = await pool.query(
+    const result = await dbRun(
       'INSERT INTO webhooks (project_id, token, description) VALUES (?, ?, ?)',
       [project.id, token, description]
     );
@@ -32,7 +33,7 @@ router.post('/create/:id', async (req, res) => {
     const webhookUrl = `/webhook/${token}`;
     
     res.json({ 
-      id: result.insertId,
+      id: result.lastID,
       url: webhookUrl,
       token,
       project_id: project.id,
@@ -47,7 +48,7 @@ router.post('/create/:id', async (req, res) => {
 // List all webhooks
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const rows = await dbAll(`
       SELECT w.*, p.name as project_name 
       FROM webhooks w 
       JOIN projects p ON w.project_id = p.id
@@ -69,9 +70,9 @@ router.get('/', async (req, res) => {
 // Delete a webhook
 router.delete('/:id', async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM webhooks WHERE id = ?', [req.params.id]);
+    const result = await dbRun('DELETE FROM webhooks WHERE id = ?', [req.params.id]);
     
-    if (result.affectedRows === 0) {
+    if (result.changes === 0) {
       return res.status(404).json({ error: 'Webhook not found' });
     }
     
@@ -86,7 +87,7 @@ router.delete('/:id', async (req, res) => {
 router.post('/:token', async (req, res) => {
   try {
     // Find webhook by token
-    const [webhookRows] = await pool.query('SELECT * FROM webhooks WHERE token = ?', [req.params.token]);
+    const webhookRows = await dbAll('SELECT * FROM webhooks WHERE token = ?', [req.params.token]);
     
     if (webhookRows.length === 0) {
       return res.status(404).json({ error: 'Webhook not found' });
@@ -95,10 +96,10 @@ router.post('/:token', async (req, res) => {
     const webhook = webhookRows[0];
     
     // Update last used date
-    await pool.query('UPDATE webhooks SET last_used = CURRENT_TIMESTAMP WHERE id = ?', [webhook.id]);
+    await dbRun('UPDATE webhooks SET last_used = CURRENT_TIMESTAMP WHERE id = ?', [webhook.id]);
     
     // Get project information
-    const [projectRows] = await pool.query('SELECT * FROM projects WHERE id = ?', [webhook.project_id]);
+    const projectRows = await dbAll('SELECT * FROM projects WHERE id = ?', [webhook.project_id]);
     
     if (projectRows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
@@ -110,17 +111,17 @@ router.post('/:token', async (req, res) => {
     res.json({ status: 'deploy_started', project: project.name });
     
     // Record deployment start in logs
-    const [logResult] = await pool.query(
+    const logResult = await dbRun(
       'INSERT INTO deployment_logs (project_id, action, status, triggered_by) VALUES (?, ?, ?, ?)',
       [project.id, 'deploy', 'started', `webhook:${webhook.id}`]
     );
-    const logId = logResult.insertId;
+    const logId = logResult.lastID;
     
     // Execute deployment
     const deployResult = await deployProject(project, logId, `webhook:${webhook.id}`);
     
     // Update log entry with result
-    await pool.query(
+    await dbRun(
       'UPDATE deployment_logs SET status = ?, log_content = ? WHERE id = ?',
       [deployResult.status, deployResult.logContent, logId]
     );

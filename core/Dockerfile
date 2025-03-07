@@ -13,10 +13,10 @@ COPY package*.json pnpm-lock.yaml ./
 
 RUN pnpm install
 
-# Copy source code
-COPY . .
+# # Copy source code
+# COPY . .
 
 EXPOSE ${PORT}
 
 # Start the Express application
-CMD ["pnpm", "start"]
+CMD ["pnpm", "run" , "dev"]

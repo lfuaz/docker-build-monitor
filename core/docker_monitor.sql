@@ -50,6 +50,8 @@ CREATE TABLE `projects` (
   `repository_url` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `idcontainer` varchar(255) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `ix_projects_name` (`name`),
   KEY `ix_projects_id` (`id`)

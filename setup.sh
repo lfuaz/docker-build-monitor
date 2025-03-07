@@ -1,279 +1,248 @@
 #!/bin/bash
-# Build script for docker-build-monitor with interactive CLI
 
-# Exit on error
-set -e
+echo "=== Docker Build Monitor Setup ==="
+echo ""
 
-RANDOM_STRING=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-
-# Default values
-DEPLOYMENT_MODE="docker"
-DB_HOST="database"
-DB_NAME="docker_monitor"
-DB_PASSWORD=$RANDOM_STRING
-DEBUG="true"
-PORT="8048"
-
-# Track which variables have been set via CLI
-CLI_SET_MODE=false
-CLI_SET_DB_HOST=false
-CLI_SET_DB_NAME=false
-CLI_SET_DB_PASS=false
-CLI_SET_DEBUG=false
-CLI_SET_PORT=false
-
-# Print colorful status messages
-function echo_status() {
-  echo -e "\033[1;34m[SETUP]\033[0m $1"
+# Function to check if a command exists
+command_exists() {
+  command -v "$1" &> /dev/null
 }
 
-# Display help message
-function show_help() {
-  echo "Usage: $0 [OPTIONS]"
-  echo ""
-  echo "Options:"
-  echo "  -m, --mode MODE       Deployment mode: 'docker' or 'local' (default: docker)"
-  echo "  -h, --db-host HOST    Database host (default: database)"
-  echo "  -n, --db-name NAME    Database name and user (default: docker_monitor)"
-  echo "  -p, --db-pass PASS    Database password (default: moihznejfzebf)"
-  echo "  -d, --debug BOOL      Debug mode: 'true' or 'false' (default: true)"
-  echo "  -P, --port PORT       Port number (default: 8048)"
-  echo "  --help                Display this help message"
-  echo ""
-  echo "If options are not provided, you will be prompted for input interactively."
-  exit 0
-}
+# Ask for package manager preference using keyboard selection
+echo "Which package manager would you like to use?"
+echo "Press a key to select:"
+echo "[1] npm"
+echo "[2] yarn"
+echo "[3] bun"
 
-# Parse command-line arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    -m|--mode)
-      DEPLOYMENT_MODE="$2"
-      CLI_SET_MODE=true
-      shift 2
-      ;;
-    -h|--db-host)
-      DB_HOST="$2"
-      CLI_SET_DB_HOST=true
-      shift 2
-      ;;
-    -n|--db-name)
-      DB_NAME="$2"
-      CLI_SET_DB_NAME=true
-      shift 2
-      ;;
-    -p|--db-pass)
-      DB_PASSWORD="$2"
-      CLI_SET_DB_PASS=true
-      shift 2
-      ;;
-    -d|--debug)
-      DEBUG="$2"
-      CLI_SET_DEBUG=true
-      shift 2
-      ;;
-    -P|--port)
-      PORT="$2"
-      CLI_SET_PORT=true
-      shift 2
-      ;;
-    --help)
-      show_help
-      ;;
-    *)
-      echo "Unknown option: $1"
-      show_help
-      ;;
-  esac
-done
+# Read a single character
+read -n 1 -s package_choice
+echo ""
 
-# Interactive prompt function
-function prompt_input() {
-  local prompt_text="$1"
-  local default_value="$2"
-  local user_input
-  
-  read -p "$prompt_text [$default_value]: " user_input
-  echo "${user_input:-$default_value}"
-}
+# Set package manager based on key pressed
+case $package_choice in
+  1)
+    package_manager="npm"
+    echo "Selected: npm"
+    ;;
+  2)
+    package_manager="yarn"
+    echo "Selected: yarn"
+    ;;
+  3)
+    package_manager="bun"
+    echo "Selected: bun"
+    ;;
+  *)
+    echo "Invalid selection. Defaulting to npm."
+    package_manager="npm"
+    ;;
+esac
 
-# Gather missing information interactively if not provided via CLI
-echo_status "Setting up configuration..."
+# Validate and install package manager if needed
+case $package_manager in
+  npm)
+    if ! command_exists npm; then
+      echo "npm is not installed. Installing..."
+      curl -fsSL https://npmjs.org/install.sh | sh
+    else
+      echo "npm is already installed."
+    fi
+    ;;
+  yarn)
+    if ! command_exists yarn; then
+      echo "yarn is not installed. Installing..."
+      if command_exists npm; then
+        npm install -g yarn
+      else
+        curl -o- -L https://yarnpkg.com/install.sh | bash
+      fi
+    else
+      echo "yarn is already installed."
+    fi
+    ;;
+  bun)
+    if ! command_exists bun; then
+      echo "bun is not installed. Installing..."
+      curl -fsSL https://bun.sh/install | bash
+    else
+      echo "bun is already installed."
+    fi
+    ;;
+  *)
+    echo "Invalid package manager selected. Defaulting to npm."
+    package_manager="npm"
+    if ! command_exists npm; then
+      echo "npm is not installed. Installing..."
+      curl -fsSL https://npmjs.org/install.sh | sh
+    fi
+    ;;
+esac
 
-if [ "$CLI_SET_MODE" = false ]; then
-  echo "Select deployment mode:"
-  echo "1) docker - Run in containerized environment"
-  echo "2) local - Run on local machine"
-  read -p "Enter choice [1]: " mode_choice
-  case "${mode_choice:-1}" in
-    1|docker) DEPLOYMENT_MODE="docker" ;;
-    2|local) DEPLOYMENT_MODE="local" ;;
-    *) echo "Invalid choice, using default: docker"; DEPLOYMENT_MODE="docker" ;;
-  esac
+# Source bashrc to ensure the package manager is available in current session
+if [ -f "$HOME/.bashrc" ]; then
+  echo "Reloading shell configuration..."
+  source "$HOME/.bashrc"
 fi
 
-if [ "$CLI_SET_DB_HOST" = false ]; then
-  db_host_default="database"
-  [ "$DEPLOYMENT_MODE" = "local" ] && db_host_default="localhost"
-  DB_HOST=$(prompt_input "Database host" "$db_host_default")
-fi
+# Ask about purpose
+echo ""
+echo "Are you setting up for development or production use?"
+echo "Press a key to select:"
+echo "[1] Development (will install dependencies and run both frontend and backend in dev mode)"
+echo "[2] Production (will build frontend and run core only)"
+read -n 1 -s purpose
+echo ""
+echo "Selected: $([ "$purpose" = "1" ] && echo "Development" || echo "Production")"
 
-if [ "$CLI_SET_DB_NAME" = false ]; then
-  DB_NAME=$(prompt_input "Database name/user" "$DB_NAME")
-fi
-
-if [ "$CLI_SET_DB_PASS" = false ]; then
-  DB_PASSWORD=$(prompt_input "Database password" "$DB_PASSWORD")
-fi
-
-if [ "$CLI_SET_DEBUG" = false ]; then
-  DEBUG=$(prompt_input "Enable debug mode? (true/false)" "$DEBUG")
-fi
-
-if [ "$CLI_SET_PORT" = false ]; then
-  PORT=$(prompt_input "Port number" "$PORT")
-fi
-
-# Store the initial directory
-INITIAL_DIR=$(pwd)
-USER=$(whoami)
-
-# Use the current directory as the project root
-PROJECT_ROOT=$(pwd)
-
-# clear node_modules and dist directories
-echo_status "Clearing node_modules and dist directories to prevent conflicts"
-rm -rf $PROJECT_ROOT/core/node_modules
-rm -rf $PROJECT_ROOT/core/dist
-rm -rf $PROJECT_ROOT/frontend/node_modules
-rm -rf $PROJECT_ROOT/frontend/dist
-rm -rf $PROJECT_ROOT/database
-
-
-#create init.sql file to add permission connect from '%' to the database using the user and password
-echo_status "Creating init.sql file to add permission connect from '%' to the database using the user and password"
-# Make sure the database directory exists
-mkdir -p "$INITIAL_DIR/database"
-cat > "$INITIAL_DIR/database/init.sql" << SQL
-SET GLOBAL host_cache_size=0;
-CREATE USER '$DB_NAME'@'%' IDENTIFIED BY '$DB_PASSWORD';
-GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_NAME'@'%';
-FLUSH PRIVILEGES;
-SQL
-
-echo_status "Using project root: $PROJECT_ROOT"
-echo_status "Deployment mode: $DEPLOYMENT_MODE"
-
-# Create environment file
-function create_env_file() {
-  local env_file="$1"
-  echo_status "Creating environment file at $env_file"
-  
-  cat > "$env_file" << EOF
-# Environment Variables
-DB_HOST=$DB_HOST
-DB_USER=$DB_NAME
-DB_PASSWORD=$DB_PASSWORD
-DB_NAME=$DB_NAME
-
-DEBUG=$DEBUG
-
-PORT=$PORT
-EOF
-
-  echo_status "Environment file created successfully."
-}
-
-# Create environment files
-create_env_file "$PROJECT_ROOT/.env"
-create_env_file "$PROJECT_ROOT/core/.env"
-
-if [ "$DEPLOYMENT_MODE" = "docker" ]; then
-  # Start Docker services first
-  echo_status "Starting Docker services..."
-  docker compose up -d --build || { echo_status "Docker Compose failed!"; exit 1; }
-  echo_status "Docker services started successfully."
-  
-  # Then build frontend
-  echo_status "Building frontend..."
-  if [ -d "$PROJECT_ROOT/frontend" ]; then
-    cd "$PROJECT_ROOT/frontend"
-    echo_status "Installing dependencies..."
-    pnpm install || { echo_status "Frontend dependency installation failed!"; exit 1; }
-    echo_status "changing ownership of frontend directory"
-    sudo chown -R $USER:$USER dist || { echo_status "Failed to change ownership of frontend directory"; exit 1; }
-    echo_status "Building frontend..."
-    pnpm run build || { echo_status "Frontend build failed!"; exit 1; }
-    echo_status "Frontend build completed successfully."
-    cd "$PROJECT_ROOT"
-  else
-    echo_status "Error: frontend directory not found!"
-    exit 1
-  fi
-  
-  sudo chown -R $USER:$USER ./frontend/dist
-  echo_status "Application is running in Docker containers."
-  echo_status "Access the application at http://localhost:$PORT"
+# Ask for port configuration
+echo ""
+if [ "$purpose" = "1" ]; then
+  echo "Development mode: Frontend will run on port 5173 (Vite default)"
+  echo "What port should the backend server run on? (default: 3000)"
 else
-  # For local mode, build frontend first
-  echo_status "Building frontend..."
-  if [ -d "$PROJECT_ROOT/frontend" ]; then
-    cd "$PROJECT_ROOT/frontend"
-    echo_status "Installing dependencies..."
-    pnpm install || { echo_status "Frontend dependency installation failed!"; exit 1; }
-    echo_status "Building frontend..."
-    pnpm run build || { echo_status "Frontend build failed!"; exit 1; }
-    echo_status "Frontend build completed successfully."
-    cd "$PROJECT_ROOT"
-  else
-    echo_status "Error: frontend directory not found!"
-    exit 1
-  fi
-  
-  # Move frontend dist to core directory
-  if [ -d "$PROJECT_ROOT/core" ]; then
-    echo_status "Moving frontend dist to core directory..."
-    
-    # Check if the dist directory exists
-    if [ ! -d "$PROJECT_ROOT/frontend/dist" ]; then
-      echo_status "Error: Frontend dist directory not found after build!"
-      echo_status "Please check the frontend build process."
-      exit 1
-    fi
-    
-    # Check if dist directory contains files
-    if [ -z "$(ls -A "$PROJECT_ROOT/frontend/dist" 2>/dev/null)" ]; then
-      echo_status "Warning: Frontend dist directory is empty after build!"
-      echo_status "Please check the frontend build process."
-      exit 1
-    fi
-    
-    mkdir -p "$PROJECT_ROOT/core/dist"
-    echo_status "Copying files from $PROJECT_ROOT/frontend/dist/ to $PROJECT_ROOT/core/dist/"
-    
-    # Use cp with more explicit path and better error handling
-    cp -rv "$PROJECT_ROOT/frontend/dist/." "$PROJECT_ROOT/core/dist/"
-    if [ $? -ne 0 ]; then
-      echo_status "Failed to copy frontend files!"
-      exit 1
-    fi
-    
-    echo_status "Frontend files copied successfully."
-    
-    # Run core server
-    cd "$PROJECT_ROOT/core"
-    echo_status "Installing core dependencies..."
-    pnpm install || { echo_status "Core dependency installation failed!"; exit 1; }
-    
-    echo_status "Starting server..."
-    node server.js || { echo_status "Server start failed!"; exit 1; }
-  else
-    echo_status "Error: core directory not found!"
-    exit 1
-  fi
+  echo "What port should the application run on? (default: 3000)"
+fi
+read -p "Port: " port_number
+
+# Use default if no input
+if [ -z "$port_number" ]; then
+  port_number="3000"
 fi
 
-# Return to the initial directory
-cd "$INITIAL_DIR"
+# Validate port number
+if ! [[ "$port_number" =~ ^[0-9]+$ ]]; then
+  echo "Invalid port number. Defaulting to 3000."
+  port_number="3000"
+fi
 
-echo_status "Setup process completed!"
+# Set working directory
+cd "$(dirname "$0")" || exit
+
+# If production mode, update the .env file in core folder
+if [ "$purpose" = "2" ]; then
+  echo ""
+  echo "=== Configuring application port ==="
+  
+  # Create or update .env file in core directory
+  if [ -f "core/.env" ]; then
+    # Update PORT in existing .env file
+    if grep -q "^PORT=" "core/.env"; then
+      sed -i "s/^PORT=.*/PORT=$port_number/" "core/.env"
+    else
+      echo "PORT=$port_number" >> "core/.env"
+    fi
+  else
+    # Create new .env file with PORT
+    echo "PORT=$port_number" > "core/.env"
+  fi
+  
+  echo "Application configured to run on port $port_number"
+fi
+
+# Handle frontend setup
+echo ""
+echo "=== Setting up frontend ==="
+cd frontend || { echo "Error: frontend directory not found"; exit 1; }
+
+echo "Installing frontend dependencies..."
+case $package_manager in
+  npm)
+    npm install
+    ;;
+  yarn)
+    yarn install
+    ;;
+  bun)
+    bun install
+    ;;
+esac
+
+echo "Building frontend..."
+case $package_manager in
+  npm)
+    npm run build
+    ;;
+  yarn)
+    yarn build
+    ;;
+  bun)
+    bun run build
+    ;;
+esac
+
+# If development, start frontend dev server in background
+if [ "$purpose" = "1" ]; then
+  echo "Starting frontend development server..."
+  case $package_manager in
+    npm)
+      npm run dev &
+      ;;
+    yarn)
+      yarn dev &
+      ;;
+    bun)
+      bun run dev &
+      ;;
+  esac
+  FRONTEND_PID=$!
+  echo "Frontend development server started with PID: $FRONTEND_PID"
+fi
+
+# Change to core directory
+cd ../core || { echo "Error: core directory not found"; exit 1; }
+echo ""
+echo "=== Setting up backend ==="
+
+echo "Installing backend dependencies..."
+case $package_manager in
+  npm)
+    npm install
+    ;;
+  yarn)
+    yarn install
+    ;;
+  bun)
+    bun install
+    ;;
+esac
+
+# Run backend based on purpose
+if [ "$purpose" = "1" ]; then
+  echo "Starting backend in development mode..."
+  # For development, pass the port as an environment variable
+  case $package_manager in
+    npm)
+      PORT=$port_number npm run dev
+      ;;
+    yarn)
+      PORT=$port_number yarn dev
+      ;;
+    bun)
+      PORT=$port_number bun run dev
+      ;;
+  esac
+else
+  echo "Starting backend in production mode..."
+  # For production, .env file has already been updated
+  case $package_manager in
+    npm)
+      npm run start
+      ;;
+    yarn)
+      yarn start
+      ;;
+    bun)
+      bun run start
+      ;;
+  esac
+fi
+
+echo ""
+echo "Setup complete!"
+if [ "$purpose" = "1" ]; then
+  echo "Frontend is running on: http://localhost:5173"
+  echo "Backend is running on: http://localhost:$port_number"
+else
+  echo "Application is running on: http://localhost:$port_number"
+fi

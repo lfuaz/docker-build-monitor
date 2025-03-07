@@ -1,59 +1,74 @@
 // services/dockerService.js - Docker-related operations
-const Docker = require('dockerode');
-const Compose = require('dockerode-compose');
 const { exec } = require('child_process');
 const { sendEventToAll } = require('./sseService');
 
-// Connect to Docker API
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-
 /**
- * Get project containers from Docker
+ * Get project containers from Docker using exec instead of Dockerode
  */
 async function getProjectContainers() {
-  try {
-    // Get all containers
-    const containers = await docker.listContainers({ all: true });
+  return new Promise((resolve, reject) => {
+    // Use docker ps with format option to get all containers in JSON format
+    exec('docker ps -a --format "{{json .}}"', (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error detecting Docker projects:', error);
+        reject(error);
+        return;
+      }
 
-    // Extract project information from containers
-    const projectsMap = {};
-    
-    for (const container of containers) {
-      const labels = container.Labels || {};
-      
-      const projectPath = labels['com.docker.compose.project.working_dir'];
-      const configfiles = labels['com.docker.compose.project.config_files'];
-      const projectName = labels['com.docker.compose.project'];
-      
+      try {
+        // Split by newline and parse each line as a JSON object
+        const containersList = stdout.trim().split('\n')
+          .filter(line => line.trim() !== '')
+          .map(line => JSON.parse(line));
 
-      // If container has the necessary labels
-      if (configfiles) {
-        if (!projectsMap[projectName]) {
-          projectsMap[projectName] = {
-            name: projectName,
-            path: configfiles,
-            containers: []
-          };
+        // Extract project information from containers
+        const projectsMap = {};
+        
+        for (const container of containersList) {
+          // Get labels as string and parse it
+          const labelsStr = container.Labels || '';
+          const labels = {};
+          
+          // Parse comma-separated labels into an object
+          labelsStr.split(',').forEach(labelPair => {
+            const [key, value] = labelPair.split('=');
+            if (key && value) {
+              labels[key] = value;
+            }
+          });
+          
+          const projectName = labels['com.docker.compose.project'];
+          const configfiles = labels['com.docker.compose.project.config_files'];
+          
+          // If container has the necessary labels
+          if (configfiles) {
+            if (!projectsMap[projectName]) {
+              projectsMap[projectName] = {
+                name: projectName,
+                path: configfiles,
+                containers: []
+              };
+            }
+            
+            // Add container to project
+            projectsMap[projectName].containers.push({
+              id: container.ID,
+              name: container.Names.replace(/^\//, ''),
+              image: container.Image,
+              state: container.State,
+              status: container.Status
+            });
+          }
         }
         
-        // Add container to project
-        projectsMap[projectName].containers.push({
-          id: container.Id,
-          name: container.Names[0].replace(/^\//, ''),
-          image: container.Image,
-          state: container.State,
-          status: container.Status
-          
-        });
+        // Convert map to array of projects
+        resolve(Object.values(projectsMap));
+      } catch (error) {
+        console.error('Error parsing Docker projects:', error);
+        reject(error);
       }
-    }
-    
-    // Convert map to array of projects
-    return Object.values(projectsMap);
-  } catch (error) {
-    console.error('Error detecting Docker projects:', error);
-    throw error;
-  }
+    });
+  });
 }
 
 /**
@@ -284,7 +299,6 @@ function deployProject(project, logId, triggerSource = 'user') {
 }
 
 module.exports = {
-  docker,
   getProjectContainers,
   buildProject,
   deployProject

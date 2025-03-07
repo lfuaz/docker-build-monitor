@@ -2,8 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const errorHandler = require('./middleware/errorHandler');
 const { clients } = require('./services/sseService');
+const { initialize: initDb, db } = require('./config/database');
 
 // Import routes
 const projectRoutes = require('./routes/projectRoutes');
@@ -45,12 +45,24 @@ app.use((req, res) => {
   res.status(404).send('Not Found');
 });
 
-// Error handler middleware
-app.use(errorHandler);
 
-// Start the server
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Docker Build Monitor API listening on port ${port}`);
-});
+// Initialize database and start the server
+async function startServer() {
+  try {
+    // Initialize the database
+    await initDb();
+    console.log('Database initialized successfully');
+    
+    // Start the server
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Docker Build Monitor API listening on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;
